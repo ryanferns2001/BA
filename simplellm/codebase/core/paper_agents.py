@@ -18,20 +18,9 @@ from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
-AGENTS_CONFIG = [    {"name": "GPT-4o", "type": "openai", "model": "gpt-4o" , "weight": 0.99999},
-    {"name": "GPT-4o-mini", "type": "openai", "model": "gpt-4o-mini" , "weight": 0.9999},
-    {"name": "GPT-5", "type": "openai", "model": "gpt-5" , "weight": 0.9999999},
-    {"name": "GPT-5-mini", "type": "openai", "model": "gpt-5-mini", "weight": 0.999999},
-]
+AGENTS_CONFIG = [{"name": "GPT-4o-mini", "type": "openai", "model": "gpt-4o-mini" , "weight": 1.0}]
 
-Possible_agents = [
-    {"name": "GPT-4o", "type": "openai", "model": "gpt-4o", "weight": 0.99999},
-    {"name": "GPT-4o-mini", "type": "openai", "model": "gpt-4o-mini", "weight": 0.9999},
-    {"name": "GPT-5", "type": "openai", "model": "gpt-5", "weight": 0.9999999},
-    {"name": "GPT-5-mini", "type": "openai", "model": "gpt-5-mini", "weight": 0.999999},
-    #{"name": "Llama-3", "type": "ollama", "model": "llama3.3:70b", "weight": 1},
-    #{"name": "Llama-4", "type": "ollama", "model": "llama4:16x17b", "weight": 1},
-]
+Possible_agents = [{"name": "GPT-4o-mini", "type": "openai", "model": "gpt-4o-mini", "weight": 1.0}]
 
 setup_root_logger(log_level="INFO")
 

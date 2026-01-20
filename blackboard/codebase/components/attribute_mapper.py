@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, Dict, List, Optional, Union
 from openai import OpenAI
 import json
@@ -11,13 +12,15 @@ logger = logging.getLogger(__name__)
 
 class AttributeMapper:
 
-    def __init__(self, attribute: str, input_data, gpt_model: str = "gpt-5", api_key: str = None , candidate_amount = 3, first_split_amount = 0):
+    def __init__(self, attribute: str, input_data, gpt_model: str = "gpt-4o-mini", api_key: str = None , candidate_amount = 3, first_split_amount = 0):
         logger.info(f"Initializing AttributeMapper with attribute: {attribute}")
         self.name = attribute
         self.gpt_model = gpt_model
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise NotImplementedError
-        self.client  = OpenAI(api_key=api_key)
+            raise ValueError("Missing OpenAI API key. Set OPENAI_API_KEY or pass api_key to AttributeMapper.")
+        self.client = OpenAI(api_key=api_key)
+
         self.input_data = input_data
 
 

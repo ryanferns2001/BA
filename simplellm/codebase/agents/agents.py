@@ -423,7 +423,11 @@ Ontology:
     def _merge_llm_response(self, template_json: Dict[str, Any], llm_text: Union[str, dict], prefixes: str) -> Dict[
         str, Any]:
 
-        template_json["debug"]["errors_messages"] = []
+        # Ensure debug section exists (some templates omit it)
+        template_json.setdefault("debug", {})
+        template_json["debug"].setdefault("errors_messages", [])
+        template_json["debug"].setdefault("mapping_candidates_debug", {})
+
         if isinstance(llm_text, dict):
             response_json = llm_text
         elif isinstance(llm_text, str):
