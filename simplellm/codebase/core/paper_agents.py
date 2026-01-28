@@ -18,9 +18,9 @@ from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
-AGENTS_CONFIG = [{"name": "GPT-4o-mini", "type": "openai", "model": "gpt-4o-mini" , "weight": 1.0}]
+AGENTS_CONFIG = [{"name": "GPT-5-mini", "type": "openai", "model": "gpt-5-mini" , "weight": 1.0}]
 
-Possible_agents = [{"name": "GPT-4o-mini", "type": "openai", "model": "gpt-4o-mini", "weight": 1.0}]
+Possible_agents = [{"name": "GPT-5-mini", "type": "openai", "model": "gpt-5-mini", "weight": 1.0}]
 
 setup_root_logger(log_level="INFO")
 

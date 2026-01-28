@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class AttributeMapper:
 
-    def __init__(self, attribute: str, input_data, gpt_model: str = "gpt-4o-mini", api_key: str = None , candidate_amount = 3, first_split_amount = 0):
+    def __init__(self, attribute: str, input_data, gpt_model: str = "gpt-5-mini", api_key: str = None , candidate_amount = 3, first_split_amount = 0):
         logger.info(f"Initializing AttributeMapper with attribute: {attribute}")
         self.name = attribute
         self.gpt_model = gpt_model

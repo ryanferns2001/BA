@@ -154,7 +154,7 @@ class LLMMapper:
                 result["errors"].append(f"Class {cls} not found in Ontology.")
         return result
 
-    def count_tokens(self,text: Union[str, list, dict], model: str = "gpt-4o-mini") -> int:
+    def count_tokens(self,text: Union[str, list, dict], model: str = "gpt-5-mini") -> int:
         if not isinstance(text, str):
             import json
             text = json.dumps(text, ensure_ascii=False)
