@@ -3,3 +3,5 @@ __pycache__/
 env/.env
 simplellm/exports/
 blackboard/exports/
+.DS_Store
+**/.DS_Store
