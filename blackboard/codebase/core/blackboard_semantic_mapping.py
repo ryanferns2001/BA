@@ -11,11 +11,12 @@ import copy
 from blackboard.evaluation_methods.evalutions import run_evaluations
 from blackboard.codebase.components.reasoning_agent import ReasoningAgent
 from blackboard.codebase.components.discussion_engine import DiscussionEngine
+from blackboard.codebase.components.grouping_agent import GroupingAgent
 from datacorpus.tools.top_k_eval import evaluate_top_k
 setup_root_logger(log_level="INFO")
 logger = logging.getLogger(__name__)
-gptmodel = "gpt-5"
-
+gptmodel = "gpt-5-mini"
+grouping_enabled = True  # set to False for baseline runs
 # ---------------------------------------------------------
 # Environment Loader
 # ---------------------------------------------------------
@@ -118,6 +119,7 @@ def merge_label_and_example(label_mapper: AttributeMapper,
             "documentation": documentation,
             "historical_references": hist,
             "ontology": ontology,
+            "blackboard": blackboard,
         },
         gpt_model=gpt_model
     )
@@ -192,9 +194,13 @@ def run_pipeline(
 
 
     env = load_environment(vcslam_path)
-    api_key = env["openai_key"]
-    base_dir = env["base_dir"]
+    import os
+    api_key = env.get("openai_key") or os.getenv("OPENAI_API_KEY")
 
+    if not api_key:
+        raise ValueError("No OpenAI API key found. Set OPENAI_API_KEY or provide openai_key in environment config.")
+
+    base_dir = env["base_dir"]
     ontology_str = env["ontology_path"].read_text(encoding="utf-8")
 
 
@@ -226,6 +232,25 @@ def run_pipeline(
 
         mappers = {}
         attributes_list = list(attributes)
+        blackboard = {
+            "sample_id": sid,
+            "json_data": json_data,
+            "documentation": documentation,
+            "historical_references": filtered_hist,
+            "ontology": ontology_str,
+            "attributes": attributes_list,
+            "grouping": None,
+        }
+        grouping_agent = GroupingAgent(
+        api_key=api_key,
+        model=gptmodel,
+        max_iterations=3,
+        )
+        
+        if grouping_enabled:
+            grouping_agent.run_provisional(blackboard)
+            results["grouping_provisional"] = blackboard["grouping"]
+            
         total = len(attributes_list)
         iteration = 1
         for attr in attributes_list:
@@ -238,7 +263,8 @@ def run_pipeline(
                     "json_data": json_data,
                     "documentation": documentation,
                     "historical_references": filtered_hist,
-                    "ontology": ontology_str
+                    "ontology": ontology_str,
+                    "blackboard": blackboard,
                 },
                 gpt_model=gptmodel
             )
@@ -256,6 +282,11 @@ def run_pipeline(
                 "state": mapper.state,
                 "logs": mapper.logs
             }
+
+        if grouping_enabled:
+            grouping_agent.run_final(blackboard)
+            results["grouping_final"] = blackboard["grouping"]
+    
 
         before_reasoning_snapshot = {
             attr: {
