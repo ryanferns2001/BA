@@ -82,6 +82,18 @@ class AttributeMapper:
             }
         }
 
+        grouping = self.input_data.get("grouping_context")
+
+        grouping_text = "null"
+        if isinstance(grouping, dict) and grouping.get("groups"):
+            lines = []
+            for g in grouping.get("groups", []):
+                gid = g.get("group_id")
+                label = g.get("label")
+                attrs = g.get("attributes", [])
+                lines.append(f"- {gid} ({label}): {', '.join(attrs)}")
+            grouping_text = "\n".join(lines)
+
         if not reason:
             user_prompt = f"""
         You are a mapping expert.
@@ -117,7 +129,13 @@ class AttributeMapper:
         ============================
         CONTEXT DATA
         ============================
+        Grouping context (blackboard):
+        {grouping_text}
 
+        Instruction:
+        If the current attribute is in a group, prefer mapping candidates that are semantically consistent with the group’s shared concept.
+        Avoid subject/predicate choices that diverge from the group unless strong evidence contradicts it.
+        
         Original JSON data:
         {json.dumps(self.input_data["json_data"], indent=4)}
 
@@ -171,6 +189,13 @@ class AttributeMapper:
                ============================
                CONTEXT DATA
                ============================
+               Grouping context (blackboard):
+               {grouping_text}
+
+               Instruction:
+               If the current attribute is in a group, prefer mapping candidates that are semantically consistent with the group’s shared concept.
+               Avoid subject/predicate choices that diverge from the group unless strong evidence contradicts it.
+
 
                Original JSON data:
                {json.dumps(self.input_data["json_data"], indent=4)}

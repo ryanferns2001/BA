@@ -8,7 +8,7 @@ class ReasoningAgent:
         self.client = OpenAI(api_key=api_key)
         self.gpt_model = gpt_model
 
-    def determine_discussions(self, attribute_map: dict, original_json_data=None, documentation : str = "", historical_references = None, amount_turns = 3) -> dict:
+    def determine_discussions(self, attribute_map: dict, original_json_data=None, documentation : str = "", historical_references = None, amount_turns = 3, grouping= None) -> dict:
 
         if original_json_data is None:
             original_json_data = {}
@@ -66,6 +66,12 @@ OUTPUT FORMAT EXACTLY (you may start more then 1 discussion, here is just an exa
 
 
 Do not perform discussion, only declare them. Only respond in this json format. No wrappers like '''json or similar.'
+
+Grouping context (blackboard):
+{json.dumps(grouping, indent=2) if grouping else "null"}
+
+Rule:
+Prefer discussion participants that are in the same grouping. Only propose cross-group discussions if you explicitly justify why.
 
 Attribute Data:
 {json.dumps(attribute_map, indent=4)}

@@ -12,7 +12,7 @@ class DiscussionEngine:
         self.gpt_model = gpt_model
 
 
-    def run_discussion(self, discussion: dict, mappers: dict , original_json = None, documentation = None, historical_references = None) -> dict:
+    def run_discussion(self, discussion: dict, mappers: dict , original_json = None, documentation = None, historical_references = None, grouping= None) -> dict:
 
 
         logging.debug(f"Starting discussion for {json.dumps(discussion, indent=4)}")
@@ -75,7 +75,8 @@ class DiscussionEngine:
                     current_turn=turn,
                     original_json_data=original_json,
                     documentation=documentation,
-                    historical_mappings=historical_references
+                    historical_mappings=historical_references,
+                    grouping=grouping
                 )
 
                 response = self._call_llm_as_json(prompt)
@@ -192,7 +193,7 @@ class DiscussionEngine:
 
         return changed
 
-    def _build_prompt_discussion(self, current_attr, role, discussion, attr_context, current_turn, documentation ="", original_json_data = None, historical_mappings = None):
+    def _build_prompt_discussion(self, current_attr, role, discussion, attr_context, current_turn, documentation ="", original_json_data = None, historical_mappings = None, grouping= None):
 
         turn_logs_so_far = discussion.get("turn_logs", [])
         discussion_static = {
@@ -229,6 +230,14 @@ You can also provide no commands at all if you only want to talk.
 In the array, the TTL-Triple of candidate, the Subject and Predicate are the mapping, while the literal with the attribute name is purely as identifier for processing, but MAY give clues for the appropriate candidate.
 
 Here is the full context for the previous generation and discussion upon which the candidates are build and selected:
+
+Grouping context (blackboard):
+{json.dumps(grouping, indent=2) if grouping else "null"}
+
+Instruction:
+If the participants belong to the same group in the grouping context above, aim for semantically compatible subject/predicate choices across the group.
+Only argue for cross-group changes if you explicitly justify why.
+
 Original Json-Data:
 {json.dumps(original_json_data, indent=2)}
 

@@ -120,6 +120,7 @@ def merge_label_and_example(label_mapper: AttributeMapper,
             "historical_references": hist,
             "ontology": ontology,
             "blackboard": blackboard,
+            "grouping_context": blackboard.get("grouping"),
         },
         gpt_model=gpt_model
     )
@@ -265,6 +266,7 @@ def run_pipeline(
                     "historical_references": filtered_hist,
                     "ontology": ontology_str,
                     "blackboard": blackboard,
+                    "grouping_context": blackboard.get("grouping"),
                 },
                 gpt_model=gptmodel
             )
@@ -325,12 +327,19 @@ def run_pipeline(
             for attr in mappers
         }
 
-        discussions = reasoning.determine_discussions(attribute_map=attribute_map_for_reasoning, original_json_data=json_data, documentation=documentation, historical_references=filtered_hist)
+        discussions = reasoning.determine_discussions(attribute_map=attribute_map_for_reasoning, original_json_data=json_data, documentation=documentation, historical_references=filtered_hist, grouping=blackboard.get("grouping"))
 
         engine = DiscussionEngine(api_key=api_key, gpt_model=gptmodel)
 
         for disc_id, disc in discussions.items():
-            discussions[disc_id] = engine.run_discussion(disc, mappers)
+            discussions[disc_id] = engine.run_discussion(
+                disc,
+                mappers,
+                original_json=json_data,
+                documentation=documentation,
+                historical_references=filtered_hist,
+                grouping=blackboard.get("grouping")
+            )
 
         results["discussions"] = discussions
 
