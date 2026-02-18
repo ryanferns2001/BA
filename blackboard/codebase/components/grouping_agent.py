@@ -149,6 +149,10 @@ class GroupingAgent:
             "    }\n"
             "  ],\n"
             '  "ungrouped_attributes": ["attrX", "attrY"],\n'
+            '  "ungrouped_rationales": {\n'
+            '    "attrX": "<brief explanation why it was not grouped>",\n'
+            '    "attrY": "<brief explanation why it was not grouped>"\n'
+            '  },\n'  
             '  "quality_flags": {\n'
             '    "confidence": "<low|medium|high>"\n'
             "  }\n"
@@ -208,6 +212,10 @@ class GroupingAgent:
             "    }\n"
             "  ],\n"
             '  "ungrouped_attributes": ["attrX", "attrY"],\n'
+            '  "ungrouped_rationales": {\n'
+            '    "attrX": "<brief explanation why it was not grouped>",\n'
+            '    "attrY": "<brief explanation why it was not grouped>"\n'
+            '  },\n'  
             '  "quality_flags": {\n'
             '    "confidence": "<low|medium|high>",\n'
             '    "coverage": <number between 0 and 1>\n'
@@ -375,12 +383,15 @@ class GroupingAgent:
         """
         groups = llm_json.get("groups", [])
         ungrouped = llm_json.get("ungrouped_attributes", [])
+        ungrouped_rationales = llm_json.get("ungrouped_rationales", {})
         qf = llm_json.get("quality_flags", {})
 
         if not isinstance(groups, list):
             groups = []
         if not isinstance(ungrouped, list):
             ungrouped = []
+        if not isinstance(ungrouped_rationales, dict):
+            ungrouped_rationales = {}    
 
         # Ensure each group has required fields
         normalized_groups = []
@@ -429,6 +440,17 @@ class GroupingAgent:
         model_ungrouped = [a for a in ungrouped if isinstance(a, str) and a in attributes]
         ungrouped_final = sorted(set(remaining).union(model_ungrouped), key=lambda x: attributes.index(x))
 
+        # Normalize ungrouped rationales (one short reason per ungrouped attribute)
+        DEFAULT_UNGROUPED_REASON = "No sufficiently strong evidence to assign this attribute to a group."
+        normalized_ungrouped_rationales = {}
+
+        for a in ungrouped_final:
+            r = ungrouped_rationales.get(a)
+            if isinstance(r, str) and r.strip():
+                normalized_ungrouped_rationales[a] = r.strip()
+            else:
+                normalized_ungrouped_rationales[a] = DEFAULT_UNGROUPED_REASON
+
         # Quality flags (diagnostic only)
         coverage = 0.0
         if attributes:
@@ -460,6 +482,7 @@ class GroupingAgent:
             "evidence_summary": evidence_summary,
             "groups": normalized_groups,
             "ungrouped_attributes": ungrouped_final,
+            "ungrouped_rationales": normalized_ungrouped_rationales,
             "quality_flags": normalized_qf,
             "debug": {
                 "raw_model": self.model,
