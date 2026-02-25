@@ -285,6 +285,11 @@ def run_pipeline(
         if grouping_enabled:
             grouping_agent.run_provisional(blackboard)
             results["grouping_provisional"] = blackboard["grouping"]
+
+        logger.info(
+            f"DEBUG grouping_enabled={grouping_enabled}, "
+            f"grouping_is_none={blackboard.get('grouping') is None}"
+        )    
             
         total = len(attributes_list)
         iteration = 1
