@@ -302,110 +302,106 @@ def run_pipeline(
                     "blackboard": blackboard,
                     "grouping_context": blackboard.get("grouping"),
                 },
-                gpt_model=gptmodel
+                gpt_model=gptmodel,
+                candidate_amount=10
             )
 
             mapper.generate_mappings()
-            mapper.validate_mappings()
-            mapper.documentation_reasoning()
-            mapper.historical_references_reasoning()
-            mapper.example_value_reasoning()
-            mapper.attribute_label_proximity_reasoning()
-            mapper.select_final_mappings()
-
+        
             mappers[attr] = mapper
             results["attributes"][attr] = {
                 "state": mapper.state,
                 "logs": mapper.logs
             }
 
-        if grouping_enabled:
-            grouping_agent.run_final(blackboard)
-            results["grouping_final"] = blackboard["grouping"]
+        # For CG-only evaluation, do NOT run final grouping (saves tokens)
+        # if grouping_enabled:
+        #     grouping_agent.run_final(blackboard)
+        #     results["grouping_final"] = blackboard["grouping"]
     
 
-        before_reasoning_snapshot = {
-            attr: {
-                "final_mapping": copy.deepcopy(mappers[attr].state["final_mapping"])
-            }
-            for attr in mappers
-        }
+       # before_reasoning_snapshot = {
+        #    attr: {
+       #         "final_mapping": copy.deepcopy(mappers[attr].state["final_mapping"])
+      #      }
+      #      for attr in mappers
+     #   }
 
-        eval_json_before = {
-            "prefix": extract_prefix_block(ontology_str),
-            "mappings_candidates": {}
-        }
+     #   eval_json_before = {
+     #       "prefix": extract_prefix_block(ontology_str),
+     #       "mappings_candidates": {}
+     #   }
 
-        for attr, mapper in mappers.items():
-            eval_json_before["mappings_candidates"][attr] = build_ranked_candidates(mapper, kmax=10)
+     #   for attr, mapper in mappers.items():
+      #      eval_json_before["mappings_candidates"][attr] = build_ranked_candidates(mapper, kmax=10)
 
         # --- Evaluation BEFORE reasoning/discussion (paper-style: Hits@1/3/5/10) ---
-        for kk in EVAL_KS:
-            stats = evaluate_top_k(k=kk, reference_model=ref, to_evaluate=eval_json_before)
-            results["evaluation"]["before_reasoning"][f"hits@{kk}"] = stats.get(f"hits@{kk}", 0)
-            results["evaluation"]["before_reasoning"][f"not_hits@{kk}"] = stats.get(f"not_hits@{kk}", 0)
-            if kk == 1:
+      #  for kk in EVAL_KS:
+      #      stats = evaluate_top_k(k=kk, reference_model=ref, to_evaluate=eval_json_before)
+      #      results["evaluation"]["before_reasoning"][f"hits@{kk}"] = stats.get(f"hits@{kk}", 0)
+      #      results["evaluation"]["before_reasoning"][f"not_hits@{kk}"] = stats.get(f"not_hits@{kk}", 0)
+       #     if kk == 1:
                 # Downstream scripts rely on these fields (Fail + per-attribute boolean evals)
-                results["evaluation"]["before_reasoning"]["no_mappings_provided"] = stats.get("no_mappings_provided", 0)
-                results["evaluation"]["before_reasoning"]["evaluations"] = stats.get("evaluations", {})
-                results["evaluation"]["before_reasoning"]["errors"] = stats.get("errors", [])
-        reasoning = ReasoningAgent(api_key=api_key, gpt_model=gptmodel)
+      #          results["evaluation"]["before_reasoning"]["no_mappings_provided"] = stats.get("no_mappings_provided", 0)
+      #          results["evaluation"]["before_reasoning"]["evaluations"] = stats.get("evaluations", {})
+      #          results["evaluation"]["before_reasoning"]["errors"] = stats.get("errors", [])
+      #  reasoning = ReasoningAgent(api_key=api_key, gpt_model=gptmodel)
 
-        attribute_map_for_reasoning = {
-            attr: {
-                "final": mappers[attr].state.get("final_mapping"),
-                "matrix": mappers[attr].state.get("matrix")
-            }
-            for attr in mappers
-        }
+     #   attribute_map_for_reasoning = {
+       #     attr: {
+     #           "final": mappers[attr].state.get("final_mapping"),
+     #           "matrix": mappers[attr].state.get("matrix")
+     #       }
+     #       for attr in mappers
+     #   }
 
-        discussions = reasoning.determine_discussions(attribute_map=attribute_map_for_reasoning, original_json_data=json_data, documentation=documentation, historical_references=filtered_hist, grouping=blackboard.get("grouping"))
+    #    discussions = reasoning.determine_discussions(attribute_map=attribute_map_for_reasoning, original_json_data=json_data, documentation=documentation, historical_references=filtered_hist, grouping=blackboard.get("grouping"))
 
-        engine = DiscussionEngine(api_key=api_key, gpt_model=gptmodel)
+    #    engine = DiscussionEngine(api_key=api_key, gpt_model=gptmodel)
 
-        for disc_id, disc in discussions.items():
-            discussions[disc_id] = engine.run_discussion(
-                disc,
-                mappers,
-                original_json=json_data,
-                documentation=documentation,
-                historical_references=filtered_hist,
-                grouping=blackboard.get("grouping")
-            )
+    #    for disc_id, disc in discussions.items():
+    #        discussions[disc_id] = engine.run_discussion(
+     #           disc,
+     #           mappers,
+      #          original_json=json_data,
+     #           documentation=documentation,
+      #          historical_references=filtered_hist,
+      #          grouping=blackboard.get("grouping")
+     #       )
 
-        results["discussions"] = discussions
+     #   results["discussions"] = discussions
 
-        for attr, mapper in mappers.items():
-            results["attributes"][attr]["state"]["final_mapping"] = mapper.state["final_mapping"]
+    #    for attr, mapper in mappers.items():
+     #       results["attributes"][attr]["state"]["final_mapping"] = mapper.state["final_mapping"]
 
 
-        after_map_snapshot = {
-            attr: results["attributes"][attr]
-            for attr in results["attributes"]
-        }
+    #    after_map_snapshot = {
+    #        attr: results["attributes"][attr]
+    #        for attr in results["attributes"]
+    #    }
 
-        results["reasoning_effect"] = compute_reasoning_effect(
-            before_reasoning_snapshot,
-            results["attributes"]
-        )
+    #    results["reasoning_effect"] = compute_reasoning_effect(
+   #         before_reasoning_snapshot,
+    #        results["attributes"]
+    #    )
 
-        eval_json_after = {
-            "prefix": extract_prefix_block(ontology_str),
-            "mappings_candidates": {}
-        }
+     #   eval_json_after = {
+     #       "prefix": extract_prefix_block(ontology_str),
+     #       "mappings_candidates": {}
+     #   }
 
-        for attr, mapper in mappers.items():
-            eval_json_after["mappings_candidates"][attr] = build_ranked_candidates(mapper, kmax=10)
+     #   for attr, mapper in mappers.items():
+     #       eval_json_after["mappings_candidates"][attr] = build_ranked_candidates(mapper, kmax=10)
 
         # --- Evaluation AFTER reasoning/discussion (paper-style: Hits@1/3/5/10) ---
-        for kk in EVAL_KS:
-            stats = evaluate_top_k(k=kk, reference_model=ref, to_evaluate=eval_json_after)
-            results["evaluation"]["after_reasoning"][f"hits@{kk}"] = stats.get(f"hits@{kk}", 0)
-            results["evaluation"]["after_reasoning"][f"not_hits@{kk}"] = stats.get(f"not_hits@{kk}", 0)
-            if kk == 1:
-                results["evaluation"]["after_reasoning"]["no_mappings_provided"] = stats.get("no_mappings_provided", 0)
-                results["evaluation"]["after_reasoning"]["evaluations"] = stats.get("evaluations", {})
-                results["evaluation"]["after_reasoning"]["errors"] = stats.get("errors", [])
+     #   for kk in EVAL_KS:
+     #       stats = evaluate_top_k(k=kk, reference_model=ref, to_evaluate=eval_json_after)
+      #      results["evaluation"]["after_reasoning"][f"hits@{kk}"] = stats.get(f"hits@{kk}", 0)
+      #      results["evaluation"]["after_reasoning"][f"not_hits@{kk}"] = stats.get(f"not_hits@{kk}", 0)
+     #       if kk == 1:
+     #           results["evaluation"]["after_reasoning"]["no_mappings_provided"] = stats.get("no_mappings_provided", 0)
+     #           results["evaluation"]["after_reasoning"]["evaluations"] = stats.get("evaluations", {})
+     #           results["evaluation"]["after_reasoning"]["errors"] = stats.get("errors", [])
 
         output_file = sample_output_dir / f"{sid}_mapping_results.json"
         output_file.write_text(json.dumps(results, indent=4), encoding="utf-8")

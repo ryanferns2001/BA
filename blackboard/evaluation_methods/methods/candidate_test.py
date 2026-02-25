@@ -34,10 +34,8 @@ def build_input_json(attributes):
     for attr_name, data in attributes.items():
         state = data.get("state", {}) or {}
 
-        # Paper-consistent: evaluate validated candidates (C_a)
-        candidates = state.get("validated_candidates")
-        if candidates is None:
-            candidates = state.get("candidates", [])
+        # For candidate-generator-only evaluation:
+        candidates = state.get("candidates", [])
 
         arr = []
         for idx, item in enumerate(candidates):
@@ -123,6 +121,18 @@ def create_plot(values, ylabel, title, save_path):
     plt.savefig(save_path)
     plt.close()
 
+def as_int(x):
+    # Some codepaths may store counters as dicts; normalize to int
+    if isinstance(x, dict):
+        # common patterns: {"count": N} or {"value": N}
+        if "count" in x:
+            return int(x["count"])
+        if "value" in x:
+            return int(x["value"])
+        return 0
+    if isinstance(x, (int, float)):
+        return int(x)
+    return 0
 
 def compute_global_averages(results_by_sid, root_folder):
     averages = {}
@@ -131,8 +141,11 @@ def compute_global_averages(results_by_sid, root_folder):
         vals = []
         for sid, res in results_by_sid.items():
             ev = res.get(k, {})
-            hits = ev.get("hits@" + str(k), 0)
-            total = hits + ev.get("not_hits@" + str(k), 0) + ev.get("no_mappings_provided", 0)
+            hits = as_int(ev.get("hits@" + str(k), 0))
+            not_hits = as_int(ev.get("not_hits@" + str(k), 0))
+            no_map = as_int(ev.get("no_mappings_provided", 0))
+
+            total = hits + not_hits + no_map
 
             if total > 0:
                 vals.append((hits / total) * 100)
@@ -156,9 +169,12 @@ def compute_global_averages(results_by_sid, root_folder):
         vals = []
         for sid, res in results_by_sid.items():
             ev = res.get(k, {})
-            hits = ev.get("hits@" + str(k), 0)
-            total = hits + ev.get("not_hits@" + str(k), 0) + ev.get("no_mappings_provided", 0)
-            vals.append((hits / total) * 100 if total > 0 else 0)
+            hits = as_int(ev.get("hits@" + str(k), 0))
+            not_hits = as_int(ev.get("not_hits@" + str(k), 0))
+            no_map = as_int(ev.get("no_mappings_provided", 0))
+
+            total = hits + not_hits + no_map
+            vals.append(hits / total * 100 if total > 0 else 0)
 
         plot_path = os.path.join(out_dir, f"hits@{k}_plot.png")
         create_plot(
