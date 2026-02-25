@@ -22,7 +22,7 @@ class GroupingAgent:
     def __init__(
         self,
         api_key: str,
-        model: str = "gpt-5-mini",
+        model: str = "gpt-5",
         max_iterations: int = 3,
         timeout_seconds: int = 120,
     ) -> None:

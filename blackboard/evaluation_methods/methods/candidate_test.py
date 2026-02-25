@@ -32,16 +32,21 @@ def build_input_json(attributes):
     mappings = {}
 
     for attr_name, data in attributes.items():
-        candidates = data.get("state", {}).get("candidates", [])
+        state = data.get("state", {}) or {}
+
+        # Paper-consistent: evaluate validated candidates (C_a)
+        candidates = state.get("validated_candidates")
+        if candidates is None:
+            candidates = state.get("candidates", [])
 
         arr = []
         for idx, item in enumerate(candidates):
-            cand_str = item.get("candidate")
+            cand_str = (item or {}).get("candidate")
             if not cand_str:
                 continue
             arr.append({
                 "candidate": cand_str,
-                "score": len(candidates) - idx,
+                "score": len(candidates) - idx,   # same scoring style as baseline script
             })
 
         mappings[attr_name] = arr
@@ -51,12 +56,11 @@ def build_input_json(attributes):
         "mappings_candidates": mappings
     }
 
-
 # ======================================================
 # EVALUATE @k FOR SINGLE SID
 # ======================================================
 
-def evaluate_sid(root_folder, sid, ks=(1, 3, 5)):
+def evaluate_sid(root_folder, sid, ks=(1, 3, 5, 10)):
     sid_folder = os.path.join(root_folder, sid)
     mapping_file = os.path.join(sid_folder, f"{sid}_mapping_results.json")
 
@@ -123,7 +127,7 @@ def create_plot(values, ylabel, title, save_path):
 def compute_global_averages(results_by_sid, root_folder):
     averages = {}
 
-    for k in (1, 3, 5):
+    for k in (1, 3, 5, 10):
         vals = []
         for sid, res in results_by_sid.items():
             ev = res.get(k, {})
@@ -142,13 +146,13 @@ def compute_global_averages(results_by_sid, root_folder):
     csv_file = os.path.join(out_dir, "debug_global_averages.csv")
     with open(csv_file, "w", encoding="utf-8") as f:
         f.write("metric,percentage\n")
-        for k in (1, 3, 5):
+        for k in (1, 3, 5, 10):
             f.write(f"hits@{k},{averages[k]}\n")
 
     logger.info(f"Global averages saved → {csv_file}")
 
     # Create plots
-    for k in (1, 3, 5):
+    for k in (1, 3, 5, 10):
         vals = []
         for sid, res in results_by_sid.items():
             ev = res.get(k, {})

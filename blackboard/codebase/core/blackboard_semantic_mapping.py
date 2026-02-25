@@ -15,8 +15,11 @@ from blackboard.codebase.components.grouping_agent import GroupingAgent
 from datacorpus.tools.top_k_eval import evaluate_top_k
 setup_root_logger(log_level="INFO")
 logger = logging.getLogger(__name__)
-gptmodel = "gpt-5-mini"
+gptmodel = "gpt-5"
 grouping_enabled = True  # set to False for baseline runs
+
+# Evaluate exactly like the baseline paper: Hits@{1,3,5,10}
+EVAL_KS = (1, 3, 5, 10)
 # ---------------------------------------------------------
 # Environment Loader
 # ---------------------------------------------------------
@@ -176,6 +179,30 @@ def merge_label_and_example(label_mapper: AttributeMapper,
 
     return merged
 
+def build_ranked_candidates(mapper, kmax=10):
+    # Prefer validated candidates (already ordered/ranked by your pipeline)
+    validated = mapper.state.get("validated_candidates") or []
+    ranked = []
+
+    for rank, cand in enumerate(validated[:kmax]):
+        if not isinstance(cand, dict):
+            continue
+        ttl = cand.get("candidate")
+        if not ttl:
+            continue
+        ranked.append({
+            "candidate": ttl,
+            "score": float(kmax - rank)  # simple decreasing score
+        })
+
+    # Fallback: if validated list is missing, use the final mapping
+    if not ranked:
+        fm = mapper.state.get("final_mapping")
+        if fm and fm.get("candidate"):
+            ranked = [{"candidate": fm["candidate"], "score": 1.0}]
+
+    return ranked
+
 # ---------------------------------------------------------
 # Main Runner
 # ---------------------------------------------------------
@@ -229,7 +256,14 @@ def run_pipeline(
         sample_output_dir = base_output_dir / sid
         sample_output_dir.mkdir(parents=True, exist_ok=True)
 
-        results = {"attributes": {}, "evaluation": {}, "discussions": {}}
+        results = {
+            "attributes": {},
+            "evaluation": {
+                "before_reasoning": {},
+                "after_reasoning": {}
+            },
+            "discussions": {}
+        }
 
         mappers = {}
         attributes_list = list(attributes)
@@ -303,20 +337,18 @@ def run_pipeline(
         }
 
         for attr, mapper in mappers.items():
-            fm = mapper.state.get("final_mapping")
-            if not fm:
-                continue
-            eval_json_before["mappings_candidates"][attr] = [{
-                "candidate": fm["candidate"],
-                "score": 1
-            }]
+            eval_json_before["mappings_candidates"][attr] = build_ranked_candidates(mapper, kmax=10)
 
-        results["evaluation"]["before_reasoning"] = evaluate_top_k(
-            k=1,
-            reference_model=ref,
-            to_evaluate=eval_json_before
-        )
-
+        # --- Evaluation BEFORE reasoning/discussion (paper-style: Hits@1/3/5/10) ---
+        for kk in EVAL_KS:
+            stats = evaluate_top_k(k=kk, reference_model=ref, to_evaluate=eval_json_before)
+            results["evaluation"]["before_reasoning"][f"hits@{kk}"] = stats.get(f"hits@{kk}", 0)
+            results["evaluation"]["before_reasoning"][f"not_hits@{kk}"] = stats.get(f"not_hits@{kk}", 0)
+            if kk == 1:
+                # Downstream scripts rely on these fields (Fail + per-attribute boolean evals)
+                results["evaluation"]["before_reasoning"]["no_mappings_provided"] = stats.get("no_mappings_provided", 0)
+                results["evaluation"]["before_reasoning"]["evaluations"] = stats.get("evaluations", {})
+                results["evaluation"]["before_reasoning"]["errors"] = stats.get("errors", [])
         reasoning = ReasoningAgent(api_key=api_key, gpt_model=gptmodel)
 
         attribute_map_for_reasoning = {
@@ -363,19 +395,17 @@ def run_pipeline(
         }
 
         for attr, mapper in mappers.items():
-            fm = mapper.state.get("final_mapping")
-            if not fm:
-                continue
-            eval_json_after["mappings_candidates"][attr] = [{
-                "candidate": fm["candidate"],
-                "score": 1
-            }]
+            eval_json_after["mappings_candidates"][attr] = build_ranked_candidates(mapper, kmax=10)
 
-        results["evaluation"]["after_reasoning"] = evaluate_top_k(
-            k=1,
-            reference_model=ref,
-            to_evaluate=eval_json_after
-        )
+        # --- Evaluation AFTER reasoning/discussion (paper-style: Hits@1/3/5/10) ---
+        for kk in EVAL_KS:
+            stats = evaluate_top_k(k=kk, reference_model=ref, to_evaluate=eval_json_after)
+            results["evaluation"]["after_reasoning"][f"hits@{kk}"] = stats.get(f"hits@{kk}", 0)
+            results["evaluation"]["after_reasoning"][f"not_hits@{kk}"] = stats.get(f"not_hits@{kk}", 0)
+            if kk == 1:
+                results["evaluation"]["after_reasoning"]["no_mappings_provided"] = stats.get("no_mappings_provided", 0)
+                results["evaluation"]["after_reasoning"]["evaluations"] = stats.get("evaluations", {})
+                results["evaluation"]["after_reasoning"]["errors"] = stats.get("errors", [])
 
         output_file = sample_output_dir / f"{sid}_mapping_results.json"
         output_file.write_text(json.dumps(results, indent=4), encoding="utf-8")
@@ -394,7 +424,7 @@ def main(
     sample_ids: list[str],
     historical_ids: list[str],
     export_path="export",
-    evaluation_run = False
+    evaluation_run = True
 ):
 
     run_pipeline(vcslam_path, sample_ids, historical_ids, export_path , evaluation_run)
