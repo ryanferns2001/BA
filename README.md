@@ -1,18 +1,54 @@
-# 654321
-# SimpleLLM & SAST Blackboard
+# Semantic Typing – Grouping Extension (Bachelor Thesis)
 
-This repository contains a **scientific programming prototype** used to explore two main concepts:
+This repository contains the implementation developed in the Bachelor thesis
 
-1. **SimpleLLM Architecture** – a minimalistic framework for semantic typing.
-2. **SAST Blackboard** – A multi-agent approach for semantic typing with focus of decision understanding via signals.
+**"Evaluation of Contextual Attribute Grouping to Support Semantic Typing in a Blackboard-Based Agentic-AI System"**
 
-The goal of this project is to provide a clean and modifiable structure for testing, benchmarking, and extending LLM-driven analysis workflows.
+The code builds on the existing SAST blackboard-based semantic typing prototype and extends it with a two-stage Grouping Agent. The goal is to evaluate whether explicit contextual grouping of attributes improves semantic typing performance in a controlled experimental setting.
 
 ---
 
-## Project Structure
+## Repository Structure
 
+The repository currently contains three relevant branches:
 
+- `main`  
+  Original blackboard-based semantic typing pipeline (baseline).
+
+- `thesis-grouping-agent`  
+  Extended version including the two-stage Grouping Agent.
+
+- `eval-candidate-generator`  
+  Diagnostic setup isolating the Candidate Generator for ablation experiments.
+
+The thesis evaluation compares the baseline (`main`) with the grouping-enhanced system (`thesis-grouping-agent`). The ablation branch is used only to analyze candidate ranking behavior independently from downstream pruning.
+
+---
+
+## Model Configuration
+
+All LLM-based agents use **GPT-5** via the OpenAI API.
+
+- No fine-tuning was performed.
+- Model configuration is identical across experimental conditions.
+- Differences in results are therefore attributable to architectural changes only.
+
+---
+
+## Dataset
+
+The system is evaluated using the **VC-SLAM corpus** (Burgdorf et al., 2022).
+
+The corpus provides:
+- 101 urban open-data datasets
+- Structured raw data (CSV / GeoJSON)
+- Documentation
+- Expert reference annotations
+- A predefined ontology
+
+A slightly revised version of the ontology is used. The extension only introduces minor structural refinements and does not change conceptual coverage. The same ontology is used for all experiments.
+
+The dataset itself is not included here.
 
 ---
 
