@@ -67,9 +67,11 @@ This environment variable is required for all LLM-based components.
 ---
 ## Running the Code 
 1. Make sure you have Python ≥ 3.10 installed. 
-2. Install the dependencies (requirements.txt): pip install -r requirements.txt
+2. Install the dependencies (requirements.txt): 
+pip install -r requirements.txt
 3. Ensure that env/.env exists and contains your API key. 
-4. Start the program with the main.py in the root folder: python main.py
+4. Start the program with the main.py in the root folder: 
+python main.py
 
 ## Additional Information
 The main.py file contains the main entry points for both architectures (SimpleLLM and Blackboard). Both architectures receive the same Sample IDs (SIDs), historical reference IDs (HIDs), and other configuration parameters.
