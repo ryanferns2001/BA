@@ -57,21 +57,21 @@ The dataset itself is not included here.
 Create a folder named `env` in the project root.  
 Inside this folder, create a file called `.env` containing:
 
-OPENAI_API_KEY="your_api_key_here"
+`OPENAI_API_KEY="your_api_key_here"`
 
 This environment variable is required for all LLM-based components. 
 
 > **Note:** 
-> Additional configuration parameters (e.g., Sample IDs, historical references) are defined in main.py and can be modified there if needed. 
+> Additional configuration parameters (e.g., Sample IDs, historical references) are defined in `main.py` and can be modified there if needed. 
 
 ---
 ## Running the Code 
 1. Make sure you have Python ≥ 3.10 installed. 
 2. Install the dependencies (requirements.txt): 
-pip install -r requirements.txt
+`pip install -r requirements.txt`
 3. Ensure that env/.env exists and contains your API key. 
 4. Start the program with the main.py in the root folder: 
-python main.py
+`python main.py`
 
 ## Additional Information
 The main.py file contains the main entry points for both architectures (SimpleLLM and Blackboard). Both architectures receive the same Sample IDs (SIDs), historical reference IDs (HIDs), and other configuration parameters.
