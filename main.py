@@ -25,9 +25,9 @@ historical_ids = ["0001", "0010", "0020", "0030", "0040", "0050", "0060", "0070"
 
 def main():
     export_path_simple_llm_str = str(ROOT / "simplellm" / "exports")
-    export_path_blackboard_str = str(ROOT / "blackboard" / "exports")
+    export_path_blackboard_str = str(ROOT / "blackboard" / "exports" / "cg_group")
 
-    #simplellm.main(vcslam_path=VC_SLAM_BASE, sample_ids=sample_ids, historical_ids=historical_ids, base_export_dir=export_path_simple_llm_str,evaluation_run=True)
+    #simplellm.main(vcslam_path=VC_SLAM_BASE, sample_ids=sample_ids, historical_ids=historical_ids, base_export_dir=export_path_simple_llm_str,evaluation_run=True)   #Remove comment for SimpleLLM results
     blackboard_semantic_mapping.main(vcslam_path=VC_SLAM_BASE, sample_ids=sample_ids, historical_ids=historical_ids, export_path=export_path_blackboard_str, evaluation_run=True)
 
 if __name__ == '__main__':
